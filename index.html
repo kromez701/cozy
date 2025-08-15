@@ -12137,5 +12137,213 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </script>
 
+<script>
+
+// Bundle Variant Handler with Price Updates and Redirects
+(function() {
+  'use strict';
+
+  // Configuration
+  const config = {
+    prices: {
+      'ca775410-02e6-4783-8b5c-326c52004978': '£29.99', // Single
+      '7e68c176-0842-49a4-ad69-5decaab8953d': '£39.99',  // 2 Pillows
+      '8472984e-491f-40eb-8977-fce3fc0297a0': '£49.99'   // 3 Pillows
+    },
+    redirectUrls: {
+      'ca775410-02e6-4783-8b5c-326c52004978': 'https://example.com/single-pillow-success',
+      '7e68c176-0842-49a4-ad69-5decaab8953d': 'https://example.com/double-pillow-success', 
+      '8472984e-491f-40eb-8977-fce3fc0297a0': 'https://example.com/triple-pillow-success'
+    }
+  };
+
+  // Initialize when DOM is ready
+  function init() {
+    updateBundlePrices();
+    setupVariantListeners();
+    setupAddToCartHandler();
+    updateMainPriceDisplay(); // Set initial main price
+  }
+
+  // Update all bundle prices to GBP
+  function updateBundlePrices() {
+    Object.keys(config.prices).forEach(variantId => {
+      const priceElement = document.querySelector(`[data-deal-bar-id="${variantId}"] .kaching-bundles__bar-price`);
+      if (priceElement) {
+        priceElement.textContent = config.prices[variantId];
+      }
+    });
+  }
+
+  // Setup listeners for variant selection
+  function setupVariantListeners() {
+    const radioButtons = document.querySelectorAll('input[name^="kaching-bundles-deal"]');
+    
+    radioButtons.forEach(radio => {
+      radio.addEventListener('change', function() {
+        if (this.checked) {
+          updateMainPriceDisplay();
+          updateSelectedState();
+        }
+      });
+    });
+
+    // Also listen for clicks on the bar containers
+    const barContainers = document.querySelectorAll('.kaching-bundles__bar-main');
+    barContainers.forEach(bar => {
+      bar.addEventListener('click', function() {
+        const radio = this.closest('.kaching-bundles__bar').querySelector('input[type="radio"]');
+        if (radio && !radio.checked) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event('change'));
+        }
+      });
+    });
+  }
+
+  // Update main price display based on selected variant
+  function updateMainPriceDisplay() {
+    const selectedVariant = getSelectedVariant();
+    if (!selectedVariant) return;
+
+    const selectedPrice = config.prices[selectedVariant];
+    if (!selectedPrice) return;
+
+    // Update the main price display
+    const mainPriceElement = document.querySelector('.price-item--sale');
+    if (mainPriceElement) {
+      mainPriceElement.textContent = selectedPrice;
+    }
+
+    // Also try alternative selectors for main price
+    const altPriceElement = document.querySelector('.price__sale .price-item--last');
+    if (altPriceElement) {
+      altPriceElement.textContent = selectedPrice;
+    }
+  }
+
+  // Update visual selected state
+  function updateSelectedState() {
+    // Remove selected class from all bars
+    const allBars = document.querySelectorAll('.kaching-bundles__bar');
+    allBars.forEach(bar => {
+      bar.classList.remove('kaching-bundles__bar--selected');
+    });
+
+    // Add selected class to current selection
+    const selectedVariant = getSelectedVariant();
+    if (selectedVariant) {
+      const selectedBar = document.querySelector(`[data-deal-bar-id="${selectedVariant}"]`);
+      if (selectedBar) {
+        selectedBar.classList.add('kaching-bundles__bar--selected');
+      }
+    }
+  }
+
+  // Get currently selected variant ID
+  function getSelectedVariant() {
+    const checkedRadio = document.querySelector('input[name^="kaching-bundles-deal"]:checked');
+    return checkedRadio ? checkedRadio.value : null;
+  }
+
+  // Setup add to cart button handler
+  function setupAddToCartHandler() {
+    const addToCartButton = document.querySelector('#ProductSubmitButton-template--22757259247952__main, .product-form__submit');
+    
+    if (addToCartButton) {
+      addToCartButton.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
+        const selectedVariant = getSelectedVariant();
+        
+        if (!selectedVariant) {
+          alert('Please select a variant before adding to cart.');
+          return;
+        }
+
+        const redirectUrl = config.redirectUrls[selectedVariant];
+        
+        if (redirectUrl) {
+          // Show loading state
+          showLoadingState();
+          
+          // Simulate add to cart process (replace with actual cart logic)
+          setTimeout(() => {
+            // Redirect to the appropriate URL
+            window.location.href = redirectUrl;
+          }, 1000); // 1 second delay to show loading
+        } else {
+          console.error('No redirect URL configured for variant:', selectedVariant);
+          // Fallback to default behavior
+          this.closest('form').submit();
+        }
+      });
+    }
+  }
+
+  // Show loading state on button
+  function showLoadingState() {
+    const button = document.querySelector('#ProductSubmitButton-template--22757259247952__main, .product-form__submit');
+    const spinner = document.querySelector('.loading__spinner');
+    
+    if (button) {
+      button.disabled = true;
+      const buttonText = button.querySelector('span');
+      if (buttonText) {
+        buttonText.textContent = 'Adding...';
+      }
+    }
+    
+    if (spinner) {
+      spinner.classList.remove('hidden');
+    }
+  }
+
+  // Utility function to add CSS for better visual feedback
+  function addCustomStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+      .kaching-bundles__bar--selected {
+        opacity: 1 !important;
+      }
+      
+      .kaching-bundles__bar:not(.kaching-bundles__bar--selected) {
+        opacity: 0.7;
+      }
+      
+      .kaching-bundles__bar:hover {
+        opacity: 1;
+        cursor: pointer;
+      }
+      
+      .product-form__submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Initialize everything when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // Add custom styles
+  addCustomStyles();
+
+  // Expose functions for debugging (optional)
+  window.bundleVariantHandler = {
+    getSelectedVariant,
+    updateMainPriceDisplay,
+    updateBundlePrices
+  };
+
+})();
+
+  </script>
+
 
 </html>

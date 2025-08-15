@@ -191,6 +191,9 @@ window.ShopifyPay.apiHost = "shop.app\/pay";</script>
 #shopify-buyer-consent.hidden {
   display: none;
 }
+.accelerated-checkout-button{
+  display: none !important;
+}
 
 #shopify-subscription-policy-button {
   background: none;
@@ -12361,8 +12364,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Configuration
   const config = {
     prices: {
-      'ca775410-02e6-4783-8b5c-326c52004978': '£29.99', // Single
-      '7e68c176-0842-49a4-ad69-5decaab8953d': '£39.99',  // 2 Pillows
+      'ca775410-02e6-4783-8b5c-326c52004978': '£29.95', // Single
+      '7e68c176-0842-49a4-ad69-5decaab8953d': '£39.95',  // 2 Pillows
       '8472984e-491f-40eb-8977-fce3fc0297a0': '£49.99'   // 3 Pillows
     },
     redirectUrls: {

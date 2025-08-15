@@ -12354,7 +12354,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 
-  // Bundle Variant Handler with Price Updates and Redirects
+// Bundle Variant Handler with Price Updates and Redirects
 (function() {
   'use strict';
 
@@ -12376,8 +12376,13 @@ document.addEventListener('DOMContentLoaded', function() {
   function init() {
     updateBundlePrices();
     setupVariantListeners();
-    setupAddToCartHandler();
     updateMainPriceDisplay(); // Set initial main price
+    
+    // Delay setupAddToCartHandler to ensure it runs after other scripts
+    setTimeout(() => {
+      setupAddToCartHandler();
+      overrideExistingCartHandlers();
+    }, 100);
   }
 
   // Update all bundle prices to GBP
@@ -12403,17 +12408,55 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
 
-    // Also listen for clicks on the bar containers
-    const barContainers = document.querySelectorAll('.kaching-bundles__bar-main');
-    barContainers.forEach(bar => {
-      bar.addEventListener('click', function() {
-        const radio = this.closest('.kaching-bundles__bar').querySelector('input[type="radio"]');
-        if (radio && !radio.checked) {
+    // Listen for clicks on the entire bar container (label)
+    const barLabels = document.querySelectorAll('.kaching-bundles__bar-container');
+    barLabels.forEach(label => {
+      label.addEventListener('click', function(e) {
+        e.preventDefault();
+        const radio = this.querySelector('input[type="radio"]');
+        if (radio) {
+          // Uncheck all other radios first
+          const allRadios = document.querySelectorAll('input[name^="kaching-bundles-deal"]');
+          allRadios.forEach(r => r.checked = false);
+          
+          // Check this radio
           radio.checked = true;
-          radio.dispatchEvent(new Event('change'));
+          radio.dispatchEvent(new Event('change', { bubbles: true }));
         }
       });
     });
+
+    // Also listen for clicks on the bar main content
+    const barContainers = document.querySelectorAll('.kaching-bundles__bar-main');
+    barContainers.forEach(bar => {
+      bar.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const radio = this.closest('.kaching-bundles__bar').querySelector('input[type="radio"]');
+        if (radio) {
+          // Uncheck all other radios first
+          const allRadios = document.querySelectorAll('input[name^="kaching-bundles-deal"]');
+          allRadios.forEach(r => r.checked = false);
+          
+          // Check this radio
+          radio.checked = true;
+          radio.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+    });
+
+    // Set initial selection to first variant if none selected
+    setTimeout(() => {
+      const checkedRadio = document.querySelector('input[name^="kaching-bundles-deal"]:checked');
+      if (!checkedRadio) {
+        const firstRadio = document.querySelector('input[name^="kaching-bundles-deal"]');
+        if (firstRadio) {
+          firstRadio.checked = true;
+          firstRadio.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+    }, 100);
   }
 
   // Update main price display based on selected variant
@@ -12516,15 +12559,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Show loading state on button
-  function showLoadingState() {
-    const button = document.querySelector('#ProductSubmitButton-template--22757259247952__main, .product-form__submit');
+  function showLoadingState(button) {
+    if (!button) {
+      button = document.querySelector('#ProductSubmitButton-template--22757259247952__main, .product-form__submit');
+    }
+    
     const spinner = document.querySelector('.loading__spinner');
     
     if (button) {
       button.disabled = true;
       const buttonText = button.querySelector('span');
       if (buttonText) {
-        buttonText.textContent = 'Adding...';
+        buttonText.textContent = 'Redirecting...';
       }
     }
     
@@ -12533,6 +12579,42 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  // Override any existing cart handlers that might show modals
+  function overrideExistingCartHandlers() {
+    // Override common Shopify cart drawer/modal functions
+    if (window.CartDrawer) {
+      const originalOpen = window.CartDrawer.open;
+      window.CartDrawer.open = function() {
+        // Prevent cart drawer from opening
+        return false;
+      };
+    }
+    
+    // Override cart modal/popup functions
+    if (window.theme && window.theme.CartPopup) {
+      window.theme.CartPopup.open = function() {
+        return false;
+      };
+    }
+    
+    // Override any cart notification/toast
+    if (window.CartNotification) {
+      const originalOpen = window.CartNotification.open;
+      window.CartNotification.open = function() {
+        return false;
+      };
+    }
+    
+    // Disable any cart-related event listeners
+    document.addEventListener('cart:updated', function(e) {
+      e.stopImmediatePropagation();
+    }, true);
+    
+    document.addEventListener('cart:open', function(e) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }, true);
+  }
   // Utility function to add CSS for better visual feedback
   function addCustomStyles() {
     const style = document.createElement('style');
@@ -12554,6 +12636,18 @@ document.addEventListener('DOMContentLoaded', function() {
         opacity: 0.6;
         cursor: not-allowed;
       }
+      
+      /* Hide any cart drawer/modal that might appear */
+      .cart-drawer,
+      .cart-modal,
+      .cart-notification,
+      .drawer,
+      [data-cart-drawer],
+      [data-cart-notification] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -12566,7 +12660,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Add custom styles
-  
+  addCustomStyles();
 
   // Expose functions for debugging (optional)
   window.bundleVariantHandler = {
@@ -12576,7 +12670,7 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
 })();
-  
+
 </script>
 
 </html>

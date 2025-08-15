@@ -12165,6 +12165,10 @@ document.addEventListener('DOMContentLoaded', function() {
     updateMainPriceDisplay(); // Set initial main price
   }
 
+  setInterval(() => {
+    updateBundlePrices();
+  }, 500)
+
   // Update all bundle prices to GBP
   function updateBundlePrices() {
     Object.keys(config.prices).forEach(variantId => {
@@ -12253,6 +12257,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (addToCartButton) {
       addToCartButton.addEventListener('click', function(e) {
         e.preventDefault(); // Prevent default form submission
+        e.stopPropagation();
+            e.stopImmediatePropagation();
         
         const selectedVariant = getSelectedVariant();
         

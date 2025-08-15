@@ -12382,11 +12382,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
+  function hideBuyButton(){
+      const buyButton = document.querySelector('.accelerated-checkout-button');
+      if (buyButton) {
+        console.log('Hiding buy button', buyButton);
+          buyButton.style.display = 'none';
+      }
+    }
+
+    setInterval(() => {
+      hideBuyButton()
+    }, 200)
+
   // Initialize when DOM is ready
   function init() {
     updateBundlePrices();
     setupVariantListeners();
     updateMainPriceDisplay(); // Set initial main price
+    hideBuyButton(); // Hide the buy button
     
     // Delay setupAddToCartHandler to ensure it runs after other scripts
     setTimeout(() => {
